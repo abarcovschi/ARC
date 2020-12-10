@@ -4,21 +4,18 @@ import os, sys
 import json
 import numpy as np
 import re
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.colors import LogNorm
+from matplotlib import colors
 
 ### YOUR CODE HERE: write at least three functions which solve
 ### specific tasks by transforming the input x and returning the
 ### result. Name them according to the task ID as in the three
 ### examples below. Delete the three examples. The tasks you choose
 ### must be in the data/training directory, not data/evaluation.
-def solve_6a1e5592(x):
-    return x
-
-def solve_b2862040(x):
-    return x
-
-def solve_05269061(x):
-    return x
-
+def solve_98cf29f8(x):
+    pass
 
 def main():
     # Find all the functions defined in this file whose names are
@@ -72,10 +69,12 @@ def test(taskID, solve, data):
     for x, y in zip(train_input, train_output):
         yhat = solve(x)
         show_result(x, y, yhat)
+        show_coloured_result(x, y, yhat)
     print("Test grids")
     for x, y in zip(test_input, test_output):
         yhat = solve(x)
         show_result(x, y, yhat)
+        show_coloured_result(x, y, yhat)
 
         
 def show_result(x, y, yhat):
@@ -91,5 +90,39 @@ def show_result(x, y, yhat):
     # shape, then y == yhat is just a single bool.
     print(np.all(y == yhat))
 
+def show_coloured_result(x, y, yhat):
+    """Debug helper function to quickly colour plot the results"""
+    
+    cmap = colors.ListedColormap(['black','blue','red','green','yellow', 'grey', 'magenta', 'orange', 'turquoise', 'maroon'])
+
+    f = plt.figure(0)
+    ax = f.gca()
+    plt.imshow(x, interpolation='nearest', cmap=cmap)
+    plt.title("input")
+    plt.tight_layout()
+    plt.grid()
+    ax.set_xticks(np.arange(x.shape[1])+0.5, minor=False)
+    ax.set_yticks(np.arange(x.shape[0])+0.5, minor=False)
+
+    f = plt.figure(1)
+    ax = f.gca()
+    plt.imshow(y, interpolation='nearest', cmap=cmap)
+    plt.title("expected output")
+    plt.tight_layout()
+    plt.grid()
+    ax.set_xticks(np.arange(y.shape[1])+0.5, minor=False)
+    ax.set_yticks(np.arange(y.shape[0])+0.5, minor=False)
+
+    f = plt.figure(2)
+    ax = f.gca()
+    plt.imshow(y, interpolation='nearest', cmap=cmap)
+    plt.title("created output")
+    plt.tight_layout()
+    plt.grid()
+    ax.set_xticks(np.arange(y.shape[1])+0.5, minor=False)
+    ax.set_yticks(np.arange(y.shape[0])+0.5, minor=False)
+    
+    plt.show()
+    
 if __name__ == "__main__": main()
 
