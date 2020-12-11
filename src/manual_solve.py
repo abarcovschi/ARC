@@ -164,14 +164,33 @@ from matplotlib import colors
 #     return yhat
 
 def solve_a61f2674(x):
+    """
+        This task consists of an input grid of grey vertical bars, like a bar chart.
+        The task is to find the highest and lowest bars and colour the highest blue and lowest red and remove the other
+         intermediate height bars.
+        
+        This approach uses a standard for loop over the rows in the transposed input, since it's easier to loop over rows
+         than columns of a numpy array.
+        For each row that is not completely black, check if it has more coloured (grey) cells than the maximum or less coloured
+         cells than the minimum. If so, store the index for the corresponding case and this way the indeces of the highest
+         and lowest bars are found.
+        Then the coloured (grey) cells at the index of the highest bar are overwritten with blue, and the grey cells at the index
+         of the lowest bar are overwritten with red.
+        The transpose of the result is returned, to return vertical bars.
+
+        Status: all training and test grids are solved correctly.
+
+        Comments: - only one loop over the rows in x transpose is needed, and two loops over columns thus making the algorithm
+                     relatively efficient.
+    """
     x_T = x.T # easier to loop through rows than columns, i.e. use horizontal bars
     yhat = np.zeros(x_T.shape, dtype=int) # return yhat when transformation is complete, initialise to transpose of x with all zeros
 
     # get the indeces of the highest and lowest bars
     max_height = 0 # maximum height of a coloured bar, initialised to 0
     min_height = x_T.shape[0] # minimum height of a coloured bar, initialised to length of row in x_T
-    max_height_idx = 0 # index of row with the highest bar
-    min_height_idx = 0 # index of row with the lowest bar
+    max_height_idx = -1 # index of row with the highest bar
+    min_height_idx = -1 # index of row with the lowest bar
     for i in range(x_T.shape[0]): # loop through rows
         bar_length = np.nonzero(x_T[i])[0].shape[0] # length of the coloured bar in this row
         if bar_length > 0: # a row which has at least 1 coloured cell
