@@ -1,5 +1,11 @@
 #!/usr/bin/python
 
+"""
+    Andrei Barcovschi, 16451004, Programming and Tools for AI CT5132, Assignment 3
+
+    https://github.com/abarcovschi/ARC
+"""
+
 import os, sys
 import json
 import numpy as np
@@ -9,12 +15,24 @@ import numpy as np
 from matplotlib.colors import LogNorm
 from matplotlib import colors
 
-### YOUR CODE HERE: write at least three functions which solve
-### specific tasks by transforming the input x and returning the
-### result. Name them according to the task ID as in the three
-### examples below. Delete the three examples. The tasks you choose
-### must be in the data/training directory, not data/evaluation.
 def solve_98cf29f8(x):
+    """
+        This task contains a grid with two shapes of different colours, with a sliver of width 1 cell connected between them.
+        The two shapes are of different sizes, with the sliver having the same colour as the smaller shape.
+        The transformation involves attaching the smaller shape to the larger shape by following the sliver,
+         a sort of rope that someone pulls from the edge of the large shape to bring the small shape to it.
+
+        The solve transformation algorithm involves determining:
+            - the colours of the small shape, large shape and sliver;
+            - the starting side and ending side of each shape and sliver.
+        Then the algorithm copies the large shape into the output grid and based on the location
+         of the sliver adds the smaller shape to the correct edge of the larger shape.
+        The larger and smaller shapes' sizes are arbitrary and these names are just used to distinguish between them.
+        Technically, the algorithm will work even if the "large" shape is smaller than the "small" shape, but the
+         grid examples all feature the sliver having the same colour as the smaller shape.
+
+        Status: all training and test grids are solved correctly.
+    """
     vertical_transform = False # true if a block of the colour sliver of width 1 is in a row, i.e. sliver is vertical
     # loop over rows to see if sliver is vertical
     for i in range(x.shape[0]):
@@ -24,7 +42,7 @@ def solve_98cf29f8(x):
     if vertical_transform: # sliver is vertical
         yhat = core_98cf29f8(x)
     else: # sliver is horizontal
-        yhat = (core_98cf29f8(x.T)).T
+        yhat = (core_98cf29f8(x.T)).T # solve the grid where sliver is vertical by transposing x
     return yhat
 
 def core_98cf29f8(x):
@@ -57,17 +75,17 @@ def core_98cf29f8(x):
                 larger_shape_clr_idxs.append(larger_shape_colour) # colour of the larger shape appended
                 larger_shape_clr_idxs.append(i) # index of the first row of the larger shape appended
                 larger_shape_detected = True
-            # else if the colour of the row is the same as the sliver colour
+            # else if the colour of the row is the same as the sliver colour and the larger shape was previously detected
             elif (x[i][np.nonzero(x[i])[0][0]] == sliver_clr_idxs[0]) and (larger_shape_detected == True):
                 # the end of the larger shape has been reached
                 larger_shape_clr_idxs.append(i-1) # the previous row was the last for the larger shape (appended)
                 break
-        # else if the row is completely black
+        # else if the row is completely black and the larger shape was previously detected
         elif (x[i][np.nonzero(x[i])].size == 0) and (larger_shape_detected == True):
             # the end of the larger shape has been reached
             larger_shape_clr_idxs.append(i-1) # the previous row was the last for the larger shape (appended)
             break
-    # loop over rows again to find the indeces of the smaller shape
+    # loop over rows again to find the indeces of the smaller shape's boundaries
     smaller_shape_detected = False
     for i in range(x.shape[0]):
         if np.nonzero(x[i])[0].size > 1:
@@ -102,6 +120,21 @@ def core_98cf29f8(x):
         for i in range(smaller_shape_clr_idxs[1], smaller_shape_clr_idxs[2]+1):
             yhat[j] = x[i]
             j-=1
+    return yhat
+
+def solve_4347f46a(x):
+    yhat = x.copy()
+    for i in range(1, x.shape[0]-1): # loop through rows, i is the x_coordinate of the centre of the 3x3 kernel over the image
+        for j in range(1, x.shape[1]-1): # loop through columns of each row, j is the y_coordinate of the centre of the 3x3 kernel over the image
+            if x[i][j] != 0: # centre of kernel is over a coloured cell of x
+                # convolve the 3x3 kernel with the 3x3 portion of x inside the kernel boundaries
+                colour = x[i][j]
+                conv_res =   x[i-1][j-1] + x[i-1][j] + x[i-1][j+1] \
+                           + x[i][j-1]   + x[i][j]   + x[i][j+1] \
+                           + x[i+1][j-1] + x[i][j]   + x[i][j+1]
+                if conv_res == colour*9: # maximum convolution result
+                    # the centre of kernel is over a coloured cell in x that is inside the boundaries of a coloured shape
+                    yhat[i][j] = 0 # change cell inside shape to black in the output grid
     return yhat
 
 def main():
@@ -156,12 +189,12 @@ def test(taskID, solve, data):
     for x, y in zip(train_input, train_output):
         yhat = solve(x)
         show_result(x, y, yhat)
-        show_coloured_result(x, y, yhat)
+        show_coloured_result(x, y, yhat) # plot coloured results
     print("Test grids")
     for x, y in zip(test_input, test_output):
         yhat = solve(x)
         show_result(x, y, yhat)
-        show_coloured_result(x, y, yhat)
+        show_coloured_result(x, y, yhat) # plot coloured results
 
         
 def show_result(x, y, yhat):
