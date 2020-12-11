@@ -15,151 +15,180 @@ import numpy as np
 from matplotlib.colors import LogNorm
 from matplotlib import colors
 
-def solve_98cf29f8(x):
-    """
-        This task contains a grid with two shapes of different colours, with a sliver of width 1 cell connected between them.
-        The two shapes are of different sizes, with the sliver having the same colour as the smaller shape.
-        The transformation involves attaching the smaller shape to the larger shape by following the sliver,
-         a sort of rope that someone pulls from the edge of the large shape to bring the small shape to it.
+# def solve_98cf29f8(x):
+#     """
+#         This task contains a grid with two shapes of different colours, with a sliver of width 1 cell connected between them.
+#         The two shapes are of different sizes, with the sliver having the same colour as the smaller shape.
+#         The transformation involves attaching the smaller shape to the larger shape by following the sliver,
+#          a sort of rope that someone pulls from the edge of the large shape to bring the small shape to it.
 
-        The solve transformation algorithm involves determining:
-            - the colours of the small shape, large shape and sliver;
-            - the starting side and ending side of each shape and sliver.
-        Then the algorithm copies the large shape into the output grid and based on the location
-         of the sliver adds the smaller shape to the correct edge of the larger shape.
-        The larger and smaller shapes' sizes are arbitrary and these names are just used to distinguish between them.
-        Technically, the algorithm will work even if the "large" shape is smaller than the "small" shape, but the
-         grid examples all feature the sliver having the same colour as the smaller shape.
+#         The solve transformation algorithm involves determining:
+#             - the colours of the small shape, large shape and sliver;
+#             - the starting side and ending side of each shape and sliver.
+#         Then the algorithm copies the large shape into the output grid and based on the location
+#          of the sliver adds the smaller shape to the correct edge of the larger shape.
+#         The larger and smaller shapes' sizes are arbitrary and these names are just used to distinguish between them.
+#         Technically, the algorithm will work even if the "large" shape is smaller than the "small" shape, but the
+#          grid examples all feature the sliver having the same colour as the smaller shape.
 
-        Status: all training and test grids are solved correctly.
+#         Status: all training and test grids are solved correctly.
 
-        Comments: - slightly inefficient as need to loop over rows in x at least 4 times to extract shape information.
-                  - transformation is straightforward as operation involves copying entire rows instead of x and y indexing.
-    """
-    vertical_transform = False # true if a block of the colour sliver of width 1 is in a row, i.e. sliver is vertical
-    # loop over rows to see if sliver is vertical
-    for i in range(x.shape[0]):
-        if np.nonzero(x[i])[0].size == 1: # the first block of the sliver has been reached
-            vertical_transform = True # transformation will be vertical, i.e. colour sliver is vertical
-            break
-    if vertical_transform: # sliver is vertical
-        yhat = core_98cf29f8(x)
-    else: # sliver is horizontal
-        yhat = (core_98cf29f8(x.T)).T # solve the grid where sliver is vertical by transposing x
-    return yhat
+#         Comments: - slightly inefficient as need to loop over rows in x at least 4 times to extract shape information.
+#                   - transformation is straightforward as operation involves copying entire rows instead of x and y indexing.
+#                   - algorithm assumes there are only two colours other than black.
+#     """
+#     vertical_transform = False # true if a block of the colour sliver of width 1 is in a row, i.e. sliver is vertical
+#     # loop over rows to see if sliver is vertical
+#     for i in range(x.shape[0]):
+#         if np.nonzero(x[i])[0].size == 1: # the first block of the sliver has been reached
+#             vertical_transform = True # transformation will be vertical, i.e. colour sliver is vertical
+#             break
+#     if vertical_transform: # sliver is vertical
+#         yhat = core_98cf29f8(x)
+#     else: # sliver is horizontal
+#         yhat = (core_98cf29f8(x.T)).T # solve the grid where sliver is vertical by transposing x
+#     return yhat
 
-def core_98cf29f8(x):
-    """
-        Core function that does the transformation in vertical direction.
-        Transformation code is brought outside of solve_98cf29f8 to reduce clutter as it needs to be called twice.
-        Flow control in solve_98cf29f8 calls core_98cf29f8 only once however.
-    """
-    colours = set(x[np.nonzero(x)]) # the non black colours in x
-    larger_shape_clr_idxs = [] # 3 values: colour of shape, start idx of shape boundary side, end idx of other shape boundary side
-    smaller_shape_clr_idxs = [] # 3 values: colour of shape, start idx of shape boundary side, end idx of other shape boundary side
-    sliver_clr_idxs = [] # 3 values: colour of the coloured (non black) sliver that connects to the smaller shape, start idx, end idx
-    # loop over rows to find the indeces and colour of the sliver's boundaries
-    sliver_detected = False
-    for i in range(x.shape[0]):
-        v = np.nonzero(x[i])[0].size
-        if (np.nonzero(x[i])[0].size == 1) and (sliver_detected == False):
-            sliver_clr_idxs.append(x[i][np.nonzero(x[i])][0]) # add colour of sliver to sliver_clr_idxs
-            sliver_clr_idxs.append(i) # start idx of sliver appended
-            sliver_detected = True
-        elif (sliver_detected == True) and (np.nonzero(x[i])[0].size != 1):
-            sliver_clr_idxs.append(i-1) # end idx of sliver appended
-            break
-    # loop over rows again to find the indeces and colour of the larger shape's boundaries
-    larger_shape_detected = False
-    for i in range(x.shape[0]):
-        if np.nonzero(x[i])[0].size >= 1:
-            # if the colour of the detected shape is not the same as the sliver colour and the larger shape hasn't been detected yet
-            if (x[i][np.nonzero(x[i])[0][0]] != sliver_clr_idxs[0]) and (larger_shape_detected == False):
-                # the start of the larger shape has been reached
-                larger_shape_colour = (colours - set([sliver_clr_idxs[0]])).pop()
-                larger_shape_clr_idxs.append(larger_shape_colour) # colour of the larger shape appended
-                larger_shape_clr_idxs.append(i) # index of the first row of the larger shape appended
-                larger_shape_detected = True
-            # else if the colour of the row is the same as the sliver colour and the larger shape was previously detected
-            elif (x[i][np.nonzero(x[i])[0][0]] == sliver_clr_idxs[0]) and (larger_shape_detected == True):
-                # the end of the larger shape has been reached
-                larger_shape_clr_idxs.append(i-1) # the previous row was the last for the larger shape (appended)
-                break
-        # else if the row is completely black and the larger shape was previously detected
-        elif (x[i][np.nonzero(x[i])].size == 0) and (larger_shape_detected == True):
-            # the end of the larger shape has been reached
-            larger_shape_clr_idxs.append(i-1) # the previous row was the last for the larger shape (appended)
-            break
-    # loop over rows again to find the indeces of the smaller shape's boundaries
-    smaller_shape_detected = False
-    for i in range(x.shape[0]):
-        if np.nonzero(x[i])[0].size > 1:
-            # if the colour of the detected shape is the same as the sliver colour and the smaller shape hasn't been detected yet
-            if (x[i][np.nonzero(x[i])[0][0]] == sliver_clr_idxs[0]) and (smaller_shape_detected == False):
-                # the start of the smaller shape has been reached
-                smaller_shape_clr_idxs.append(sliver_clr_idxs[0]) # colour of smaller shape is same as sliver colour
-                smaller_shape_clr_idxs.append(i) # index of the first row of the smaller shape appended
-                smaller_shape_detected = True
-        # else if the number of coloured blocks in the row is less than or equal to 1 (sliver or black row) and smaller shape was previously detected
-        elif smaller_shape_detected == True:
-            # the end of the smaller shape has been reached
-            smaller_shape_clr_idxs.append(i-1) # the previous row was the last for the smaller shape (appended)
-            break
+# def core_98cf29f8(x):
+#     """
+#         Core function that does the transformation in vertical direction.
+#         Transformation code is brought outside of solve_98cf29f8 to reduce clutter as it needs to be called twice.
+#         Flow control in solve_98cf29f8 calls core_98cf29f8 only once however.
+#     """
+#     colours = set(x[np.nonzero(x)]) # the non black colours in x
+#     larger_shape_clr_idxs = [] # 3 values: colour of shape, start idx of shape boundary side, end idx of other shape boundary side
+#     smaller_shape_clr_idxs = [] # 3 values: colour of shape, start idx of shape boundary side, end idx of other shape boundary side
+#     sliver_clr_idxs = [] # 3 values: colour of the coloured (non black) sliver that connects to the smaller shape, start idx, end idx
+#     # loop over rows to find the indeces and colour of the sliver's boundaries
+#     sliver_detected = False
+#     for i in range(x.shape[0]):
+#         v = np.nonzero(x[i])[0].size
+#         if (np.nonzero(x[i])[0].size == 1) and (sliver_detected == False):
+#             sliver_clr_idxs.append(x[i][np.nonzero(x[i])][0]) # add colour of sliver to sliver_clr_idxs
+#             sliver_clr_idxs.append(i) # start idx of sliver appended
+#             sliver_detected = True
+#         elif (sliver_detected == True) and (np.nonzero(x[i])[0].size != 1):
+#             sliver_clr_idxs.append(i-1) # end idx of sliver appended
+#             break
+#     # loop over rows again to find the indeces and colour of the larger shape's boundaries
+#     larger_shape_detected = False
+#     for i in range(x.shape[0]):
+#         if np.nonzero(x[i])[0].size >= 1:
+#             # if the colour of the detected shape is not the same as the sliver colour and the larger shape hasn't been detected yet
+#             if (x[i][np.nonzero(x[i])[0][0]] != sliver_clr_idxs[0]) and (larger_shape_detected == False):
+#                 # the start of the larger shape has been reached
+#                 larger_shape_colour = (colours - set([sliver_clr_idxs[0]])).pop()
+#                 larger_shape_clr_idxs.append(larger_shape_colour) # colour of the larger shape appended
+#                 larger_shape_clr_idxs.append(i) # index of the first row of the larger shape appended
+#                 larger_shape_detected = True
+#             # else if the colour of the row is the same as the sliver colour and the larger shape was previously detected
+#             elif (x[i][np.nonzero(x[i])[0][0]] == sliver_clr_idxs[0]) and (larger_shape_detected == True):
+#                 # the end of the larger shape has been reached
+#                 larger_shape_clr_idxs.append(i-1) # the previous row was the last for the larger shape (appended)
+#                 break
+#         # else if the row is completely black and the larger shape was previously detected
+#         elif (x[i][np.nonzero(x[i])].size == 0) and (larger_shape_detected == True):
+#             # the end of the larger shape has been reached
+#             larger_shape_clr_idxs.append(i-1) # the previous row was the last for the larger shape (appended)
+#             break
+#     # loop over rows again to find the indeces of the smaller shape's boundaries
+#     smaller_shape_detected = False
+#     for i in range(x.shape[0]):
+#         if np.nonzero(x[i])[0].size > 1:
+#             # if the colour of the detected shape is the same as the sliver colour and the smaller shape hasn't been detected yet
+#             if (x[i][np.nonzero(x[i])[0][0]] == sliver_clr_idxs[0]) and (smaller_shape_detected == False):
+#                 # the start of the smaller shape has been reached
+#                 smaller_shape_clr_idxs.append(sliver_clr_idxs[0]) # colour of smaller shape is same as sliver colour
+#                 smaller_shape_clr_idxs.append(i) # index of the first row of the smaller shape appended
+#                 smaller_shape_detected = True
+#         # else if the number of coloured blocks in the row is less than or equal to 1 (sliver or black row) and smaller shape was previously detected
+#         elif smaller_shape_detected == True:
+#             # the end of the smaller shape has been reached
+#             smaller_shape_clr_idxs.append(i-1) # the previous row was the last for the smaller shape (appended)
+#             break
 
-    # start transformations
-    yhat = np.zeros(x.shape, dtype=int) # return yhat when transformation is complete
-    # add larger shape to yhat
-    for i in range(larger_shape_clr_idxs[1], larger_shape_clr_idxs[2]+1):
-        yhat[i] = x[i]
-    # if sliver is below larger shape
-    if larger_shape_clr_idxs[2] < sliver_clr_idxs[2]:
-        # draw smaller shape below larger shape
-        j = larger_shape_clr_idxs[2] + 1
-        for i in range(smaller_shape_clr_idxs[1], smaller_shape_clr_idxs[2]+1):
-            yhat[j] = x[i]
-            j+=1
-    # else the sliver is above larger shape
-    else:
-        # draw smaller shape above larger shape
-        j = larger_shape_clr_idxs[1] - 1
-        for i in range(smaller_shape_clr_idxs[1], smaller_shape_clr_idxs[2]+1):
-            yhat[j] = x[i]
-            j-=1
-    return yhat
+#     # start transformations
+#     yhat = np.zeros(x.shape, dtype=int) # return yhat when transformation is complete
+#     # add larger shape to yhat
+#     for i in range(larger_shape_clr_idxs[1], larger_shape_clr_idxs[2]+1):
+#         yhat[i] = x[i]
+#     # if sliver is below larger shape
+#     if larger_shape_clr_idxs[2] < sliver_clr_idxs[2]:
+#         # draw smaller shape below larger shape
+#         j = larger_shape_clr_idxs[2] + 1
+#         for i in range(smaller_shape_clr_idxs[1], smaller_shape_clr_idxs[2]+1):
+#             yhat[j] = x[i]
+#             j+=1
+#     # else the sliver is above larger shape
+#     else:
+#         # draw smaller shape above larger shape
+#         j = larger_shape_clr_idxs[1] - 1
+#         for i in range(smaller_shape_clr_idxs[1], smaller_shape_clr_idxs[2]+1):
+#             yhat[j] = x[i]
+#             j-=1
+#     return yhat
 
-def solve_4347f46a(x):
-    """
-        This task consists of multiple coloured shapes in a grid that need to have their centres hollowed out,
-         leaving only the boundaries of the shapes coloured.
+# def solve_4347f46a(x):
+#     """
+#         This task consists of multiple coloured shapes in a grid that need to have their centres hollowed out,
+#          leaving only the boundaries of the shapes coloured.
 
-        A convolution approach is used to implement this transformation.
-        A 3x3 kernel with all values=1 and stride=1 is used iteratively across the input grid, performing a convolution
-         with corresponding cells in the input grid that fall in the bounds of the kernel.
-        The kernel starts in the top left corner and finishes in the bottom right corner of the input grid.
-        Anytime the convolution results in a maximum value of colour*9, this means that all neighbours in all directions
-         of a cell in the input grid are also coloured cells and therefore the cell in the input grid indexed by the centre
-         of the kernel is inside a coloured shape. The corresponding cell in the output grid is overwritten with 0 as a result.
+#         A convolution approach is used to implement this transformation.
+#         A 3x3 kernel with all values=1 and stride=1 is used iteratively across the input grid, performing a convolution
+#          with corresponding cells in the input grid that fall in the bounds of the kernel.
+#         The kernel starts in the top left corner and finishes in the bottom right corner of the input grid.
+#         Anytime the convolution results in a maximum value of colour*9, this means that all neighbours in all directions
+#          of a cell in the input grid are also coloured cells and therefore the cell in the input grid indexed by the centre
+#          of the kernel is inside a coloured shape. The corresponding cell in the output grid is overwritten with 0 as a result.
 
-        Status: all training and test grids are solved correctly.
+#         Status: all training and test grids are solved correctly.
 
-        Comments: - this algorithm turned out to be very efficient as it could transform on the fly by scanning the input grid
-                     row by row, only needing one loop over the input.
-                  - indexing in both the row and column directions was needed, resulting in nested for loops.
-                  - convolution is a very applicable approach as it is commonly used in computer vision tasks.
-    """
-    yhat = x.copy() # return yhat after transformation is complete
-    for i in range(1, x.shape[0]-1): # loop through rows in x, i is the x_coordinate of the centre of the 3x3 kernel over the image
-        for j in range(1, x.shape[1]-1): # loop through columns of each row, j is the y_coordinate of the centre of the 3x3 kernel over the image
-            if x[i][j] != 0: # centre of kernel is over a coloured cell of x
-                # convolve the 3x3 kernel with the 3x3 portion of x inside the kernel boundaries
-                colour = x[i][j]
-                conv_res =   x[i-1][j-1] + x[i-1][j] + x[i-1][j+1] \
-                           + x[i][j-1]   + x[i][j]   + x[i][j+1] \
-                           + x[i+1][j-1] + x[i][j]   + x[i][j+1]
-                if conv_res == colour*9: # maximum convolution result is when all cells in x under kernel are coloured
-                    # the centre of kernel is over a coloured cell in x that IS INSIDE the boundaries of a coloured shape
-                    yhat[i][j] = 0 # change cell inside shape to black in the output grid
-    return yhat
+#         Comments: - this algorithm turned out to be very efficient as it could transform on the fly by scanning the input grid
+#                      row by row, only needing one loop over the input.
+#                   - indexing in both the row and column directions was needed, resulting in nested for loops.
+#                   - convolution is a very applicable approach as it is commonly used in computer vision tasks.
+#                   - algorithm assumes no shapes have boundaries touching the extremities of the input grid.
+#     """
+#     yhat = x.copy() # return yhat after transformation is complete
+#     for i in range(1, x.shape[0]-1): # loop through rows in x, i is the x_coordinate of the centre of the 3x3 kernel over the image
+#         for j in range(1, x.shape[1]-1): # loop through columns of each row, j is the y_coordinate of the centre of the 3x3 kernel over the image
+#             if x[i][j] != 0: # centre of kernel is over a coloured cell of x
+#                 # convolve the 3x3 kernel with the 3x3 portion of x inside the kernel boundaries
+#                 colour = x[i][j]
+#                 conv_res =   x[i-1][j-1] + x[i-1][j] + x[i-1][j+1] \
+#                            + x[i][j-1]   + x[i][j]   + x[i][j+1] \
+#                            + x[i+1][j-1] + x[i][j]   + x[i][j+1]
+#                 if conv_res == colour*9: # maximum convolution result is when all cells in x under kernel are coloured
+#                     # the centre of kernel is over a coloured cell in x that IS INSIDE the boundaries of a coloured shape
+#                     yhat[i][j] = 0 # change cell inside shape to black in the output grid
+#     return yhat
+
+def solve_a61f2674(x):
+    x_T = x.T # easier to loop through rows than columns, i.e. use horizontal bars
+    yhat = np.zeros(x_T.shape, dtype=int) # return yhat when transformation is complete, initialise to transpose of x with all zeros
+
+    # get the indeces of the highest and lowest bars
+    max_height = 0 # maximum height of a coloured bar, initialised to 0
+    min_height = x_T.shape[0] # minimum height of a coloured bar, initialised to length of row in x_T
+    max_height_idx = 0 # index of row with the highest bar
+    min_height_idx = 0 # index of row with the lowest bar
+    for i in range(x_T.shape[0]): # loop through rows
+        bar_length = np.nonzero(x_T[i])[0].shape[0] # length of the coloured bar in this row
+        if bar_length > 0: # a row which has at least 1 coloured cell
+            if bar_length >= max_height:
+                max_height = np.nonzero(x_T[i])[0].shape[0]
+                max_height_idx = i
+            if bar_length <= min_height:
+                min_height = np.nonzero(x_T[i])[0].shape[0]
+                min_height_idx = i
+    
+    # apply transformations
+    for j in range(x_T.shape[1]): # loop through columns of max and min bar rows
+        if x_T[max_height_idx][j] != 0:
+            yhat[max_height_idx][j] = 1 # max height bar is coloured to blue
+        if x_T[min_height_idx][j] != 0:
+            yhat[min_height_idx][j] = 2 # min height bar is coloured to red
+    return yhat.T # transpose back to vertical bars
 
 def main():
     # Find all the functions defined in this file whose names are
