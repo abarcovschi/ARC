@@ -15,21 +15,39 @@ from matplotlib import colors
 ### examples below. Delete the three examples. The tasks you choose
 ### must be in the data/training directory, not data/evaluation.
 def solve_98cf29f8(x):
+    vertical_transform = False # true if a block of the colour sliver of width 1 is in a row, i.e. sliver is vertical
+    # loop over rows to see if sliver is vertical
+    for i in range(x.shape[0]):
+        if np.nonzero(x[i])[0].size == 1: # the first block of the sliver has been reached
+            vertical_transform = True # transformation will be vertical, i.e. colour sliver is vertical
+            break
+    if vertical_transform: # sliver is vertical
+        yhat = core_98cf29f8(x)
+    else: # sliver is horizontal
+        yhat = (core_98cf29f8(x.T)).T
+    return yhat
+
+def core_98cf29f8(x):
+    """core function that does the transformation in vertical direction.
+    Transformation code is brought outside of solve_98cf29f8 to reduce clutter as it needs to be called twice.
+    Flow control in solve_98cf29f8 calls core_98cf29f8 only once however."""
     colours = set(x[np.nonzero(x)]) # the non black colours in x
-    vertical_transform = False # true if a block of the colour sliver of width 1 is in a row
     larger_shape_clr_idxs = [] # 3 values: colour of shape, start idx of shape boundary side, end idx of other shape boundary side
     smaller_shape_clr_idxs = [] # 3 values: colour of shape, start idx of shape boundary side, end idx of other shape boundary side
     sliver_clr_idxs = [] # 3 values: colour of the coloured (non black) sliver that connects to the smaller shape, start idx, end idx
-    # loop over rows to first find the sliver colour
-    i = 0
+    # loop over rows to find the indeces and colour of the sliver's boundaries
+    sliver_detected = False
     for i in range(x.shape[0]):
-        if np.nonzero(x[i])[0].size == 1: # the first block of the colour sliver has been reached
-            vertical_transform = True # transformation will be vertical, i.e. colour sliver is vertical
+        v = np.nonzero(x[i])[0].size
+        if (np.nonzero(x[i])[0].size == 1) and (sliver_detected == False):
             sliver_clr_idxs.append(x[i][np.nonzero(x[i])][0]) # add colour of sliver to sliver_clr_idxs
+            sliver_clr_idxs.append(i) # start idx of sliver appended
+            sliver_detected = True
+        elif (sliver_detected == True) and (np.nonzero(x[i])[0].size != 1):
+            sliver_clr_idxs.append(i-1) # end idx of sliver appended
             break
     # loop over rows again to find the indeces and colour of the larger shape's boundaries
     larger_shape_detected = False
-    i = 0
     for i in range(x.shape[0]):
         if np.nonzero(x[i])[0].size >= 1:
             # if the colour of the detected shape is not the same as the sliver colour and the larger shape hasn't been detected yet
@@ -51,7 +69,6 @@ def solve_98cf29f8(x):
             break
     # loop over rows again to find the indeces of the smaller shape
     smaller_shape_detected = False
-    i = 0
     for i in range(x.shape[0]):
         if np.nonzero(x[i])[0].size > 1:
             # if the colour of the detected shape is the same as the sliver colour and the smaller shape hasn't been detected yet
@@ -65,28 +82,26 @@ def solve_98cf29f8(x):
             # the end of the smaller shape has been reached
             smaller_shape_clr_idxs.append(i-1) # the previous row was the last for the smaller shape (appended)
             break
-    # loop over rows again to find the indeces of the sliver's boundaries
-    sliver_detected = False
-    i = 0
-    for i in range(x.shape[0]):
-        v = np.nonzero(x[i])[0].size
-        if (np.nonzero(x[i])[0].size == 1) and (sliver_detected == False):
-            sliver_clr_idxs.append(i) # start idx of sliver appended
-            sliver_detected = True
-        elif (sliver_detected == True) and (np.nonzero(x[i])[0].size != 1):
-            sliver_clr_idxs.append(i-1) # end idx of sliver appended
-            break
-    
-    yhat = x.copy() # return yhat when transformation is complete
 
-
-
-    if vertical_transform == False:
-        # loop over columns
-        for column in x.T:
-            if len(column[np.nonzero(column)]) == 1:
-                # start horizontal transformations:
-                pass
+    # start transformations
+    yhat = np.zeros(x.shape, dtype=int) # return yhat when transformation is complete
+    # add larger shape to yhat
+    for i in range(larger_shape_clr_idxs[1], larger_shape_clr_idxs[2]+1):
+        yhat[i] = x[i]
+    # if sliver is below larger shape
+    if larger_shape_clr_idxs[2] < sliver_clr_idxs[2]:
+        # draw smaller shape below larger shape
+        j = larger_shape_clr_idxs[2] + 1
+        for i in range(smaller_shape_clr_idxs[1], smaller_shape_clr_idxs[2]+1):
+            yhat[j] = x[i]
+            j+=1
+    # else the sliver is above larger shape
+    else:
+        # draw smaller shape above larger shape
+        j = larger_shape_clr_idxs[1] - 1
+        for i in range(smaller_shape_clr_idxs[1], smaller_shape_clr_idxs[2]+1):
+            yhat[j] = x[i]
+            j-=1
     return yhat
 
 def main():
