@@ -32,6 +32,9 @@ def solve_98cf29f8(x):
          grid examples all feature the sliver having the same colour as the smaller shape.
 
         Status: all training and test grids are solved correctly.
+
+        Comments: - slightly inefficient as need to loop over rows in x at least 4 times to extract shape information.
+                  - transformation is straightforward as operation involves copying entire rows instead of x and y indexing.
     """
     vertical_transform = False # true if a block of the colour sliver of width 1 is in a row, i.e. sliver is vertical
     # loop over rows to see if sliver is vertical
@@ -46,9 +49,11 @@ def solve_98cf29f8(x):
     return yhat
 
 def core_98cf29f8(x):
-    """core function that does the transformation in vertical direction.
-    Transformation code is brought outside of solve_98cf29f8 to reduce clutter as it needs to be called twice.
-    Flow control in solve_98cf29f8 calls core_98cf29f8 only once however."""
+    """
+        Core function that does the transformation in vertical direction.
+        Transformation code is brought outside of solve_98cf29f8 to reduce clutter as it needs to be called twice.
+        Flow control in solve_98cf29f8 calls core_98cf29f8 only once however.
+    """
     colours = set(x[np.nonzero(x)]) # the non black colours in x
     larger_shape_clr_idxs = [] # 3 values: colour of shape, start idx of shape boundary side, end idx of other shape boundary side
     smaller_shape_clr_idxs = [] # 3 values: colour of shape, start idx of shape boundary side, end idx of other shape boundary side
@@ -123,8 +128,27 @@ def core_98cf29f8(x):
     return yhat
 
 def solve_4347f46a(x):
-    yhat = x.copy()
-    for i in range(1, x.shape[0]-1): # loop through rows, i is the x_coordinate of the centre of the 3x3 kernel over the image
+    """
+        This task consists of multiple coloured shapes in a grid that need to have their centres hollowed out,
+         leaving only the boundaries of the shapes coloured.
+
+        A convolution approach is used to implement this transformation.
+        A 3x3 kernel with all values=1 and stride=1 is used iteratively across the input grid, performing a convolution
+         with corresponding cells in the input grid that fall in the bounds of the kernel.
+        The kernel starts in the top left corner and finishes in the bottom right corner of the input grid.
+        Anytime the convolution results in a maximum value of colour*9, this means that all neighbours in all directions
+         of a cell in the input grid are also coloured cells and therefore the cell in the input grid indexed by the centre
+         of the kernel is inside a coloured shape. The corresponding cell in the output grid is overwritten with 0 as a result.
+
+        Status: all training and test grids are solved correctly.
+
+        Comments: - this algorithm turned out to be very efficient as it could transform on the fly by scanning the input grid
+                     row by row, only needing one loop over the input.
+                  - indexing in both the row and column directions was needed, resulting in nested for loops.
+                  - convolution is a very applicable approach as it is commonly used in computer vision tasks.
+    """
+    yhat = x.copy() # return yhat after transformation is complete
+    for i in range(1, x.shape[0]-1): # loop through rows in x, i is the x_coordinate of the centre of the 3x3 kernel over the image
         for j in range(1, x.shape[1]-1): # loop through columns of each row, j is the y_coordinate of the centre of the 3x3 kernel over the image
             if x[i][j] != 0: # centre of kernel is over a coloured cell of x
                 # convolve the 3x3 kernel with the 3x3 portion of x inside the kernel boundaries
@@ -132,8 +156,8 @@ def solve_4347f46a(x):
                 conv_res =   x[i-1][j-1] + x[i-1][j] + x[i-1][j+1] \
                            + x[i][j-1]   + x[i][j]   + x[i][j+1] \
                            + x[i+1][j-1] + x[i][j]   + x[i][j+1]
-                if conv_res == colour*9: # maximum convolution result
-                    # the centre of kernel is over a coloured cell in x that is inside the boundaries of a coloured shape
+                if conv_res == colour*9: # maximum convolution result is when all cells in x under kernel are coloured
+                    # the centre of kernel is over a coloured cell in x that IS INSIDE the boundaries of a coloured shape
                     yhat[i][j] = 0 # change cell inside shape to black in the output grid
     return yhat
 
