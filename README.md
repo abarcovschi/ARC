@@ -64,3 +64,13 @@ When your output grid is ready, click the green "Submit!" button to check your a
 After you've obtained the correct answer for the current test input grid, you can switch to the next test input grid for the task using the "Next test input" button (if there is any available; most tasks only have one test input).
 
 When you're done with a task, use the "load task" button to open a new task.
+
+## In this Assignment
+
+For this assignment, at least three tasks from `data/training` directory are implemented by the student in `ARC/source/manual_solve.py`
+
+**Status update 13/12/20:** 4 tasks completed: 98cf29f8.json, 4347f46a.json, a61f2674.json, 5c2c9af4.json
+
+**Note:** `data/evaluation` is not used in this assignment.
+
+The implemented solutions for the tasks are documented and commented extensively for better understanding of the approaches taken.
