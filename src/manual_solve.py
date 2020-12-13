@@ -4,16 +4,40 @@
     Andrei Barcovschi, 16451004, Programming and Tools for AI CT5132, Assignment 3
 
     https://github.com/abarcovschi/ARC
+
+    Reflection:
+
+        All of the four tasks were solved using pure numpy and the output grid (yhat) was plotted using matplotlib (show_coloured_result).
+        I have tried to use computer vision theory in the implementation of solve_4347f46a and solve_5c2c9af4, which has simplified the task
+         of orientation awareness in the 2D world of the input grid, i.e. allowing the algorithm to see locations of colours in the grid more
+         effectively.
+
+        All of the algorithms heavily rely on finding the dimensions of the shapes inside the input grid, usually by finding the two diagonally
+         opposite corners of square shapes. This can result in the usage of a lot of for loops as the input grid needs to be scanned line by line
+         (row by row). It is easier to loop over rows in a numpy 2d array than columns, but if looping over columnds was required, it was easier
+         to trasnpose the array and loop over the rows and then transpose the array back when returning. Using numpy to determine whether a row
+         has coloured cells or not, something that was used extensively throughout the assignment, turned out to be fairly simple by using the function
+         nonzero, something that saved me a lot of manual labour and proved to be extremely helpful in determining the colours used in the input grid.
+
+        Task solve_4347f46a was the only one that could be solved in one iteration over the input image as it was the perfect case for applying
+         a true convolution over the entire input grid and applying simple additional logic creating the needed transformations on the fly, resulting
+         in the output grid after convolving the entire input grid once. The other tasks required firstly iterating over the entire input grid
+         row by row to just find the necessary spacial information of the location of the important coloured cells and only then could transformations
+         be applied, which again needed more iterating over the input image. Some of the logic began getting increasingly complex in order to take
+         into account all the possible corner cases to make the algorithms as generic as possible, with solve_5c2c9af4 achieving a high level of
+         modularity by splitting the task up into three functions and using recursion, something which could not be employed to the same extent for the
+         other tasks, especially solve_98cf29f8, which turned out to be rather cumbesome and long.
+
+         Overall, all of these tasks could be solved relatively efficiently solely manipulating numpy arrays and emplying standard algorithmic logic.
 """
 
-import os, sys
+import os
+import re
+import sys
 import json
 import numpy as np
-import re
-import matplotlib.pyplot as plt
-import numpy as np
-from matplotlib.colors import LogNorm
 from matplotlib import colors
+import matplotlib.pyplot as plt
 
 def solve_98cf29f8(x):
     """
@@ -226,6 +250,12 @@ def solve_5c2c9af4(x):
          the size of the square to draw until the square size is increased so much that none of the sides of the square can be drawn.
         The length of a side of the square needs to be calculated, and two horizontal and two vertical lines representing
         sides of the square are attempted to be drawn, with only those falling within the bounds of the output grid actually being drawn.
+
+        Status: all training and test grids are solved correctly.
+
+        Comments: - the use of computer vision theory of kernel convolutions has again made the implementation more applicable in the domain
+                     of AI, if ever so slightly.
+                  - recursion simplified the control flow of the algorithm and has helped save space, making the algorithm more concise.
     """
     # functions that return x2, y2, xc or yc coordinates, needed for kernel
     get_coord_2 = lambda c, scale: c + 2*scale + 2 # get new x2 or y2 of kernel based on new value of x1 or y1 respectively, and scale
@@ -389,12 +419,12 @@ def test(taskID, solve, data):
     for x, y in zip(train_input, train_output):
         yhat = solve(x)
         show_result(x, y, yhat)
-        show_coloured_result(x, y, yhat) # plot coloured results
+        #show_coloured_result(x, y, yhat) # plot coloured results
     print("Test grids")
     for x, y in zip(test_input, test_output):
         yhat = solve(x)
         show_result(x, y, yhat)
-        show_coloured_result(x, y, yhat) # plot coloured results
+        #show_coloured_result(x, y, yhat) # plot coloured results
 
         
 def show_result(x, y, yhat):
@@ -411,7 +441,7 @@ def show_result(x, y, yhat):
     print(np.all(y == yhat))
 
 def show_coloured_result(x, y, yhat):
-    """Debug helper function to quickly colour plot the results"""
+    """Helper function to quickly colour plot the results, used for debugging and simplifying verification of output"""
 
     cmap = colors.ListedColormap(['black','blue','red','green','yellow', 'grey', 'magenta', 'orange', 'turquoise', 'maroon'])
 
